@@ -1,7 +1,10 @@
+document.getElementById('downloadTemplate').href = 'https://github.com/sanket2000/tally-excel-to-xml/raw/main/input-template.xlsx';
+
 document.getElementById('fileInput').addEventListener('change', function () {
     const fileName = this.files.length > 0 ? this.files[0].name : 'No file chosen';
     document.getElementById('fileName').textContent = fileName;
 });
+
 document.getElementById('convertBtn').addEventListener('click', function () {
     const fileInput = document.getElementById('fileInput');
     if (!fileInput.files.length) {
