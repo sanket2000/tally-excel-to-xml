@@ -1,0 +1,41 @@
+<ENVELOPE>
+	<HEADER>
+		<TALLYREQUEST>Import Data</TALLYREQUEST>
+	</HEADER>
+	<BODY>
+		<IMPORTDATA>
+			<REQUESTDESC>
+				<REPORTNAME>All Masters</REPORTNAME>
+				<STATICVARIABLES>
+					<SVCURRENTCOMPANY></SVCURRENTCOMPANY>
+				</STATICVARIABLES>
+			</REQUESTDESC>
+			<REQUESTDATA>
+                {% for index, row in data.iterrows() -%}
+				<TALLYMESSAGE xmlns:UDF="TallyUDF">
+					<VOUCHER ACTION="Create" VCHTYPE="{{ row['VOUCHER TYPE'] }}">
+						<VOUCHERTYPENAME>{{ row['VOUCHER TYPE'] }}</VOUCHERTYPENAME>
+						<DATE>{{ row['DATE'] }}</DATE>
+						<VOUCHERNUMBER>{{ row['VOUCHER NUMBER'] }}</VOUCHERNUMBER>
+						<REFERENCE>{{ row['REFERENCE NUMBER'] }}</REFERENCE>
+						<PARTYLEDGERNAME>{{ row['LEDGER NAME DR/CR 1'] }}</PARTYLEDGERNAME>
+						<NARRATION>{{ row['STANDARD NARRATION'] }}</NARRATION>
+						<EFFECTIVEDATE>{{ row['DATE'] }}</EFFECTIVEDATE>
+                        {% for i in range(1, 31) -%}
+                            {% if row['LEDGER NAME DR/CR ' ~ i] and not pd.isna(row['LEDGER NAME DR/CR ' ~ i]) -%}
+							<ALLLEDGERENTRIES.LIST>
+								<LEDGERNAME>{{ row['LEDGER NAME DR/CR ' ~ i] }}</LEDGERNAME>
+								<REMOVEZEROENTRIES>NO</REMOVEZEROENTRIES>
+								<LEDGERFROMITEM>NO</LEDGERFROMITEM>
+								<ISDEEMEDPOSITIVE>{{ 'NO' if row['EFFECT ' ~ i] == 'Credit' else 'YES' }}</ISDEEMEDPOSITIVE>
+								<AMOUNT>{{ '-' if row['EFFECT ' ~ i] == 'Debit' else '' }}{{ row['AMOUNT ' ~ i] }}</AMOUNT>
+							</ALLLEDGERENTRIES.LIST>
+                            {% endif -%}
+                        {% endfor -%}
+					</VOUCHER>
+				</TALLYMESSAGE>
+                {% endfor -%}
+			</REQUESTDATA>
+		</IMPORTDATA>
+	</BODY>
+</ENVELOPE>

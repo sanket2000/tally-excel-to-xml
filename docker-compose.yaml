@@ -1,0 +1,10 @@
+services:
+  flask-app:
+    build:
+      context: .
+      dockerfile: Dockerfile  # Ensure this matches the name of your Dockerfile
+    ports:
+      - "8080:5000"  # Maps port 8000 on the host to port 8000 in the container
+    environment:
+      - FLASK_ENV=production  # Set environment variables
+    command: gunicorn -b 0.0.0.0:5000 -w 4 app:app  # Start the app using gunicorn
