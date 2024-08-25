@@ -65,11 +65,15 @@ function generateXML(data) {
     return xml;
 }
 
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    const year = date.getFullYear();
-    const month = ('0' + (date.getMonth() + 1)).slice(-2);
-    const day = ('0' + date.getDate()).slice(-2);
+function formatDate(serial) {
+    // Convert Excel serial date to JavaScript date
+    const utc_days = Math.floor(serial - 25569); // Days since Unix epoch
+    const utc_value = utc_days * 86400; // Convert days to seconds
+    const date_info = new Date(utc_value * 1000); // Convert to milliseconds and create date object
+
+    const year = date_info.getFullYear();
+    const month = ('0' + (date_info.getMonth() + 1)).slice(-2);
+    const day = ('0' + date_info.getDate()).slice(-2);
     return `${year}${month}${day}`;
 }
 
