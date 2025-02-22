@@ -69,15 +69,28 @@ function generateXML(data) {
 }
 
 function formatDate(serial) {
-    // Convert Excel serial date to JavaScript date
-    const utc_days = Math.floor(serial - 25569); // Days since Unix epoch
-    const utc_value = utc_days * 86400; // Convert days to seconds
-    const date_info = new Date(utc_value * 1000); // Convert to milliseconds and create date object
+    if (typeof serial === 'string') {
+        // Assume the format is DD-MM-YYYY
+        const parts = serial.split('-');
+        if (parts.length === 3) {
+            const [day, month, year] = parts;
+            return `${year}${month.padStart(2, '0')}${day.padStart(2, '0')}`;
+        } else {
+            throw new Error('Invalid date format. Expected DD-MM-YYYY.');
+        }
+    } else if (typeof serial === 'number') {
+        // Convert Excel serial date to JavaScript date
+        const utc_days = Math.floor(serial - 25569);
+        const utc_value = utc_days * 86400;
+        const date_info = new Date(utc_value * 1000);
 
-    const year = date_info.getFullYear();
-    const month = ('0' + (date_info.getMonth() + 1)).slice(-2);
-    const day = ('0' + date_info.getDate()).slice(-2);
-    return `${year}${month}${day}`;
+        const year = date_info.getFullYear();
+        const month = ('0' + (date_info.getMonth() + 1)).slice(-2);
+        const day = ('0' + date_info.getDate()).slice(-2);
+        return `${year}${month}${day}`;
+    } else {
+        throw new Error('Invalid input type. Expected a number or a string in DD-MM-YYYY format.');
+    }
 }
 
 function downloadXML(xml, filename) {
