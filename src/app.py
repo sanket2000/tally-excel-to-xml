@@ -4,6 +4,7 @@ from jinja2 import Environment, FileSystemLoader
 import os
 import io
 from pathlib import Path
+import uuid
 
 template_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
 env = Environment(loader=FileSystemLoader(template_dir))
@@ -25,7 +26,7 @@ def generate_xml():
     file = request.files["file"]
 
     # Load the uploaded Excel file
-    df = pd.read_excel(file)
+    df = read_excel_with_guid(file)
 
     # Convert date to the required format (YYYYMMDD)
     df["DATE"] = pd.to_datetime(df["DATE"], format="%d-%m-%Y").dt.strftime("%Y%m%d")
@@ -54,6 +55,25 @@ def generate_xml():
         download_name=Path(file.filename).stem + "_tally.xml",
         mimetype="application/xml",
     )
+
+
+def row_guid(row: pd.Series, namespace: uuid.UUID) -> str:
+    unique_string = str(row.name)  # Unique based on file + row index
+    _guid = uuid.uuid3(namespace, unique_string)
+    return str(_guid)  # Generate GUID
+
+
+def df_guid(file_path: str, df: pd.DataFrame) -> pd.DataFrame:
+    _file_name = os.path.basename(file_path)
+    _file_namespace = uuid.uuid5(uuid.NAMESPACE_DNS, _file_name)
+    df["GUID"] = df.apply(row_guid, args=(_file_namespace,), axis=1)
+    return df
+
+
+def read_excel_with_guid(file):
+    df = pd.read_excel(file)
+    df = df_guid(file.filename, df)
+    return df
 
 
 if __name__ == "__main__":

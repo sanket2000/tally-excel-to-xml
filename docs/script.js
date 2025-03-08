@@ -5,7 +5,7 @@ document.getElementById('fileInput').addEventListener('change', function () {
     document.getElementById('fileName').textContent = fileName;
 });
 
-document.getElementById('convertBtn').addEventListener('click', function () {
+document.getElementById('convertBtn').addEventListener('click', async function () {
     const fileInput = document.getElementById('fileInput');
     if (!fileInput.files.length) {
         alert('Please select an Excel file.');
@@ -15,12 +15,14 @@ document.getElementById('convertBtn').addEventListener('click', function () {
     const file = fileInput.files[0];
     const reader = new FileReader();
 
-    reader.onload = function (e) {
+    reader.onload = async function (e) {
         const data = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
         const json = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
-        const xmlOutput = generateXML(json);
+
+        const xmlOutput = await generateXML(json, file.name); // Use `await` to resolve the Promise
+
         document.getElementById('output').textContent = xmlOutput;
         downloadXML(xmlOutput, file.name.replace(/\.[^/.]+$/, "") + '_tally.xml');
     };
@@ -28,16 +30,22 @@ document.getElementById('convertBtn').addEventListener('click', function () {
     reader.readAsArrayBuffer(file);
 });
 
-function generateXML(data) {
+async function generateXML(data, fileName) {
     let xml = '<ENVELOPE>\n';
     xml += '\t<HEADER>\n\t\t<TALLYREQUEST>Import Data</TALLYREQUEST>\n\t</HEADER>\n';
     xml += '\t<BODY>\n\t\t<IMPORTDATA>\n\t\t\t<REQUESTDESC>\n\t\t\t\t<REPORTNAME>All Masters</REPORTNAME>\n';
     xml += '\t\t\t\t<STATICVARIABLES>\n\t\t\t\t\t<SVCURRENTCOMPANY></SVCURRENTCOMPANY>\n\t\t\t\t</STATICVARIABLES>\n';
     xml += '\t\t\t</REQUESTDESC>\n\t\t\t<REQUESTDATA>\n';
 
-    data.forEach(row => {
+    const namespaceUUID = await generateNamespaceUUID(fileName);
+
+    for (let index = 0; index < data.length; index++) {
+        const row = data[index];
+        const rowGUID = await generateRowGUID(namespaceUUID, index.toString()); // Ensure `await` is used
+
         xml += '\t\t\t\t<TALLYMESSAGE xmlns:UDF="TallyUDF">\n';
-        xml += `\t\t\t\t\t<VOUCHER ACTION="Create" VCHTYPE="${row['VOUCHER TYPE']}">\n`;
+        xml += `\t\t\t\t\t<VOUCHER REMOTEID="${rowGUID}" ACTION="Create" VCHTYPE="${row['VOUCHER TYPE']}">\n`;
+        xml += `\t\t\t\t\t\t<GUID>${rowGUID}</GUID>\n`;
         xml += `\t\t\t\t\t\t<VOUCHERTYPENAME>${row['VOUCHER TYPE']}</VOUCHERTYPENAME>\n`;
         xml += `\t\t\t\t\t\t<DATE>${formatDate(row['DATE'])}</DATE>\n`;
         xml += `\t\t\t\t\t\t<VOUCHERNUMBER>${row['VOUCHER NUMBER']}</VOUCHERNUMBER>\n`;
@@ -61,11 +69,32 @@ function generateXML(data) {
 
         xml += `\t\t\t\t\t</VOUCHER>\n`;
         xml += '\t\t\t\t</TALLYMESSAGE>\n';
-    });
+    }
 
     xml += '\t\t\t</REQUESTDATA>\n';
     xml += '\t\t</IMPORTDATA>\n\t</BODY>\n</ENVELOPE>\n';
     return xml;
+}
+
+async function generateNamespaceUUID(name) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(name);
+    const hashBuffer = await crypto.subtle.digest('SHA-1', data);
+    return formatUUID(hashBuffer);
+}
+
+async function generateRowGUID(namespaceUUID, rowNumber) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(namespaceUUID + rowNumber);
+    const hashBuffer = await crypto.subtle.digest('SHA-1', data);
+    return formatUUID(hashBuffer);
+}
+
+function formatUUID(buffer) {
+    const hex = Array.from(new Uint8Array(buffer))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+    return `${hex.substr(0, 8)}-${hex.substr(8, 4)}-${hex.substr(12, 4)}-${hex.substr(16, 4)}-${hex.substr(20, 12)}`;
 }
 
 function formatDate(serial) {

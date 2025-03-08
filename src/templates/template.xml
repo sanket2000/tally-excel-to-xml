@@ -13,7 +13,9 @@
 			<REQUESTDATA>
                 {% for index, row in data.iterrows() -%}
 				<TALLYMESSAGE xmlns:UDF="TallyUDF">
-					<VOUCHER ACTION="Create" VCHTYPE="{{ row['VOUCHER TYPE'] }}">
+					<VOUCHER REMOTEID="{{ row['GUID'] }}"
+						ACTION="Create" VCHTYPE="{{ row['VOUCHER TYPE'] }}">
+						<GUID>{{ row['GUID'] }}</GUID>
 						<VOUCHERTYPENAME>{{ row['VOUCHER TYPE'] }}</VOUCHERTYPENAME>
 						<DATE>{{ row['DATE'] }}</DATE>
 						<VOUCHERNUMBER>{{ row['VOUCHER NUMBER'] }}</VOUCHERNUMBER>
