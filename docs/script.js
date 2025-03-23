@@ -44,7 +44,7 @@ async function generateXML(data, fileName) {
         const rowGUID = await generateRowGUID(namespaceUUID, index.toString()); // Ensure `await` is used
 
         xml += '\t\t\t\t<TALLYMESSAGE xmlns:UDF="TallyUDF">\n';
-        xml += `\t\t\t\t\t<VOUCHER REMOTEID="${rowGUID}" ACTION="Create" VCHTYPE="${row['VOUCHER TYPE']}">\n`;
+        xml += `\t\t\t\t\t<VOUCHER REMOTEID="${rowGUID}" ACTION="Alter" VCHTYPE="${row['VOUCHER TYPE']}">\n`;
         xml += `\t\t\t\t\t\t<GUID>${rowGUID}</GUID>\n`;
         xml += `\t\t\t\t\t\t<VOUCHERTYPENAME>${row['VOUCHER TYPE']}</VOUCHERTYPENAME>\n`;
         xml += `\t\t\t\t\t\t<DATE>${formatDate(row['DATE'])}</DATE>\n`;
